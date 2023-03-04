@@ -52,6 +52,7 @@ import au.id.micolous.metrodroid.provider.CardsTableColumns
 import au.id.micolous.metrodroid.serializers.CardSerializer
 import au.id.micolous.metrodroid.serializers.XmlOrJsonCardFormat
 import au.id.micolous.metrodroid.transit.TransitData
+import au.id.micolous.metrodroid.transit.formatCurrency
 import au.id.micolous.metrodroid.transit.unknown.UnauthorizedClassicTransitData
 import au.id.micolous.metrodroid.ui.TabPagerAdapter
 import au.id.micolous.metrodroid.util.Preferences
@@ -230,7 +231,8 @@ class CardInfoActivity : MetrodroidActivity() {
         val balances = transitData?.balances;
 
         transitData?.trips?.let { Log.i("info", it.joinToString(" ")) };
-        sendOtg(balances?.first()!!.balance.formatCurrencyString(true).toString());
+        val bD = balances?.first()!!.balance
+        sendOtg((bD.mCurrency.toDouble()/bD.mDivisor).toString());
         findViewById<View>(R.id.loading).visibility = View.GONE
         viewPager.visibility = View.VISIBLE
 
@@ -354,6 +356,7 @@ class CardInfoActivity : MetrodroidActivity() {
         } catch (exception: Exception) {
             handleTransitDataError(card, exception)
         }
+        finish()
     }
 
     override fun onSaveInstanceState(bundle: Bundle) {

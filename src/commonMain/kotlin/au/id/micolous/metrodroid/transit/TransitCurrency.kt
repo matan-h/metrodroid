@@ -68,7 +68,7 @@ data class TransitCurrencyResource (
 @SerialName("iso")
 data class TransitCurrency (
         @SerialName("value")
-        private val mCurrency: Int,
+        val mCurrency: Int,
         /**
          * 3 character currency code (eg: AUD) per ISO 4217.
          */
