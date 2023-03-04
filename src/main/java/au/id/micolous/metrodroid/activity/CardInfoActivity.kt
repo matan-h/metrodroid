@@ -42,6 +42,7 @@ import androidx.loader.content.CursorLoader
 import androidx.loader.content.Loader
 import androidx.viewpager2.widget.ViewPager2
 import au.id.micolous.farebot.R
+import au.id.micolous.metrodroid.MetrodroidApplication
 import au.id.micolous.metrodroid.card.Card
 import au.id.micolous.metrodroid.card.UnsupportedCardException
 import au.id.micolous.metrodroid.fragment.CardBalanceFragment
@@ -55,6 +56,7 @@ import au.id.micolous.metrodroid.transit.unknown.UnauthorizedClassicTransitData
 import au.id.micolous.metrodroid.ui.TabPagerAdapter
 import au.id.micolous.metrodroid.util.Preferences
 import au.id.micolous.metrodroid.util.Utils
+import com.felhr.usbserial.UsbSerialDevice
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -76,7 +78,7 @@ class CardInfoActivity : MetrodroidActivity() {
 
     private val TIMEOUT = 0
     private val forceClaim = true
-    private var deviceD: UsbDevice? = null
+    private var deviceD: UsbSerialDevice? = null
 
 
     private fun speakTts(utt: String) {
@@ -160,11 +162,11 @@ class CardInfoActivity : MetrodroidActivity() {
     }
     fun sendOtg(data:String) {
 
-        val manager = getSystemService(Context.USB_SERVICE) as UsbManager
-        if (deviceD == null) {
-            val deviceList = manager.deviceList
-            deviceD = deviceList[deviceList.keys.first()]
-        }
+//        val manager = getSystemService(Context.USB_SERVICE) as UsbManager
+//        if (deviceD == null) {
+//            val deviceList = manager.deviceList
+//            deviceD = deviceList[deviceList.keys.first()]
+//        }
 
         //val sharedPref = this@CardInfoActivity.getSharedPreferences(
          //   "prefs", Context.MODE_PRIVATE)
@@ -174,16 +176,15 @@ class CardInfoActivity : MetrodroidActivity() {
         //showDialog(this@CardInfoActivity, "sendOtg:deviceList", deviceD.toString());
 
         Log.d("sendOtg:deviceList",deviceD.toString())
-        deviceD?.getInterface(0)?.also { intf ->
-            intf.getEndpoint(0)?.also { endpoint ->
-                manager.openDevice(deviceD)?.apply {
-                    claimInterface(intf, forceClaim)
-                    Log.d("sendOtg", "after claim interface")
-                    bulkTransfer(endpoint, data.toByteArray(), data.length, TIMEOUT) //do in another thread
-                    Log.d("sendOtg","sent data")
-                }
-            }
+        deviceD = (this.application as MetrodroidApplication).usbSerialDevice
+
+        if (deviceD == null){
+            Log.d("cardInfo","device is null")
+            return
         }
+        deviceD!!.write(data.toByteArray());
+
+
 
 
 
@@ -229,7 +230,7 @@ class CardInfoActivity : MetrodroidActivity() {
         val balances = transitData?.balances;
 
         transitData?.trips?.let { Log.i("info", it.joinToString(" ")) };
-        sendOtg(balances?.first().toString());
+        sendOtg(balances?.first()!!.balance.formatCurrencyString(true).toString());
         findViewById<View>(R.id.loading).visibility = View.GONE
         viewPager.visibility = View.VISIBLE
 

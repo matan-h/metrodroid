@@ -29,11 +29,14 @@ import androidx.appcompat.app.AppCompatDelegate
 import au.id.micolous.farebot.R
 import au.id.micolous.metrodroid.util.Preferences
 import au.id.micolous.metrodroid.util.Utils
+import com.felhr.usbserial.UsbSerialDevice
 
 class MetrodroidApplication : MultiDexApplication() {
     init {
         instance = this
     }
+
+    var usbSerialDevice: UsbSerialDevice? = null
 
     override fun onCreate() {
         super.onCreate()

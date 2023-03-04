@@ -25,7 +25,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.hardware.usb.UsbDevice
-import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
 import android.nfc.NfcAdapter
 import android.nfc.tech.*
@@ -40,6 +39,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import au.id.micolous.farebot.R
+import au.id.micolous.metrodroid.MetrodroidApplication
 import au.id.micolous.metrodroid.multi.Localizer
 import au.id.micolous.metrodroid.util.Preferences
 import au.id.micolous.metrodroid.util.Utils
@@ -90,7 +90,7 @@ class MainActivity : MetrodroidActivity() {
             onHistoryClick(it)
         }
         findViewById<Button>(R.id.otg_button).setOnClickListener {
-            sendOtg("test")
+            setupOtg()
         }
         findViewById<Button>(R.id.supported_cards_button).setOnClickListener {
             onSupportedCardsClick(it)
@@ -108,10 +108,13 @@ class MainActivity : MetrodroidActivity() {
             apply()
         }
 
+        setupOtg()
+
 
     }
 
-    fun sendOtg(data:String) {
+    fun setupOtg() {
+
 
 
         val manager = getSystemService(Context.USB_SERVICE) as UsbManager
@@ -137,18 +140,13 @@ class MainActivity : MetrodroidActivity() {
         usbSerialDevice.setBaudRate(9600)
         Log.d("sendOtg", "created device")
         usbSerialDevice.open();
-        Log.d("sendOtg", "opened device")
-        Handler(Looper.getMainLooper()).postDelayed({
-            //Do something after 100ms
-            usbSerialDevice.syncWrite("test".toByteArray(),1000)
-            Handler(Looper.getMainLooper()).postDelayed({
-                usbSerialDevice.write("test2".toByteArray())
-            },1000
-            )
-
-            Log.d("sendOtg", "write device")
-            //usbSerialDevice.close()
-        }, 5000)
+        (this.application as MetrodroidApplication).usbSerialDevice = usbSerialDevice
+//        Log.d("sendOtg", "opened device")
+//        Handler(Looper.getMainLooper()).postDelayed({
+//            usbSerialDevice.write("test2".toByteArray())
+//            Log.d("sendOtg", "write device")
+//            //usbSerialDevice.close()
+//        }, 5000)
 
 
 
