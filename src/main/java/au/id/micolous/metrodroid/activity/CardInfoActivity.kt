@@ -21,8 +21,13 @@
 package au.id.micolous.metrodroid.activity
 
 import android.app.AlertDialog
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.database.Cursor
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -50,6 +55,7 @@ import au.id.micolous.metrodroid.transit.unknown.UnauthorizedClassicTransitData
 import au.id.micolous.metrodroid.ui.TabPagerAdapter
 import au.id.micolous.metrodroid.util.Preferences
 import au.id.micolous.metrodroid.util.Utils
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -67,6 +73,11 @@ class CardInfoActivity : MetrodroidActivity() {
     private var mMenu: Menu? = null
     private var mMoreInfoPage: String? = null
     private var mOnlineServicesPage: String? = null
+
+    private val TIMEOUT = 0
+    private val forceClaim = true
+    private var deviceD: UsbDevice? = null
+
 
     private fun speakTts(utt: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -147,11 +158,78 @@ class CardInfoActivity : MetrodroidActivity() {
             finish()
         }
     }
+    fun sendOtg(data:String) {
+
+        val manager = getSystemService(Context.USB_SERVICE) as UsbManager
+        if (deviceD == null) {
+            val deviceList = manager.deviceList
+            deviceD = deviceList[deviceList.keys.first()]
+        }
+
+        //val sharedPref = this@CardInfoActivity.getSharedPreferences(
+         //   "prefs", Context.MODE_PRIVATE)
+        //val deviceJson = sharedPref.getString("SerializableDevice","").orEmpty();
+        //val gson = Gson();
+        //val deviceD = gson.fromJson(deviceJson,UsbDevice::class.java);
+        //showDialog(this@CardInfoActivity, "sendOtg:deviceList", deviceD.toString());
+
+        Log.d("sendOtg:deviceList",deviceD.toString())
+        deviceD?.getInterface(0)?.also { intf ->
+            intf.getEndpoint(0)?.also { endpoint ->
+                manager.openDevice(deviceD)?.apply {
+                    claimInterface(intf, forceClaim)
+                    Log.d("sendOtg", "after claim interface")
+                    bulkTransfer(endpoint, data.toByteArray(), data.length, TIMEOUT) //do in another thread
+                    Log.d("sendOtg","sent data")
+                }
+            }
+        }
+
+
+
+//            sharedPref.commit()
+        }
+    var usbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+
+            if (UsbManager.ACTION_USB_DEVICE_DETACHED == intent.action) {
+                val device: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+                device?.apply {
+                    // call your method that cleans up and closes communication with the device
+                }
+            }
+        }
+    }
+
+        // a
+
+    //}
+    fun showDialog(context: Context, title: String, msg: String,
+//                   positiveBtnText: String, negativeBtnText: String?,
+//                   positiveBtnClickListener: DialogInterface.OnClickListener,
+//                   negativeBtnClickListener: DialogInterface.OnClickListener?
+    ): AlertDialog {
+        val builder = AlertDialog.Builder(context)
+            .setTitle(title)
+            .setMessage(msg)
+            .setCancelable(true)
+//            .setPositiveButton(positiveBtnText, positiveBtnClickListener)
+//        if (negativeBtnText != null)
+//            builder.setNegativeButton(negativeBtnText, negativeBtnClickListener)
+        val alert = builder.create()
+        alert.show()
+        return alert
+    }
+
 
     fun showCardInfo(savedInstanceState: Bundle?, card: Card,
                      transitData: TransitData?) {
         val viewPager = findViewById<ViewPager2>(R.id.pager)
+        // here, we can process transitData and make that as string
+        val balances = transitData?.balances;
 
+        transitData?.trips?.let { Log.i("info", it.joinToString(" ")) };
+        sendOtg(balances?.first().toString());
         findViewById<View>(R.id.loading).visibility = View.GONE
         viewPager.visibility = View.VISIBLE
 

@@ -81,6 +81,17 @@
                 android:id="@+id/history_button"
                 style="?attr/ButtonStyle"
                 android:text="@string/scanned_cards" />
+
+            <Button
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:insetLeft="4dp"
+                android:insetRight="4dp"
+                android:id="@+id/otg_button"
+                style="?attr/ButtonStyle"
+                android:text="otg" />
         </LinearLayout>
     </LinearLayout>
 </RelativeLayout>

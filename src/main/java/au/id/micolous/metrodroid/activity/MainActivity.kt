@@ -22,32 +22,35 @@
 package au.id.micolous.metrodroid.activity
 
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbDeviceConnection
+import android.hardware.usb.UsbManager
 import android.nfc.NfcAdapter
-import android.nfc.tech.IsoDep
-import android.nfc.tech.MifareClassic
-import android.nfc.tech.MifareUltralight
-import android.nfc.tech.NfcA
-import android.nfc.tech.NfcF
-import android.nfc.tech.NfcV
+import android.nfc.tech.*
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
-
+import au.id.micolous.farebot.R
 import au.id.micolous.metrodroid.multi.Localizer
 import au.id.micolous.metrodroid.util.Preferences
 import au.id.micolous.metrodroid.util.Utils
-
-import au.id.micolous.farebot.R
 import au.id.micolous.metrodroid.util.ifTrue
+import com.felhr.usbserial.UsbSerialDevice
+import com.google.gson.Gson
 
 class MainActivity : MetrodroidActivity() {
     private var mNfcAdapter: NfcAdapter? = null
     private var mPendingIntent: PendingIntent? = null
+    private var screen: UsbDevice? = null;
     private val mTechLists = arrayOf(
             arrayOf(IsoDep::class.java.name),
             arrayOf(MifareClassic::class.java.name),
@@ -55,8 +58,11 @@ class MainActivity : MetrodroidActivity() {
             arrayOf(NfcA::class.java.name),
             arrayOf(NfcF::class.java.name),
             arrayOf(NfcV::class.java.name))
+    private val forceClaim = true
+    private val TIMEOUT = 0
 
     override val themeVariant get(): Int? = R.attr.MainActivityTheme
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,9 +89,84 @@ class MainActivity : MetrodroidActivity() {
         findViewById<Button>(R.id.history_button).setOnClickListener {
             onHistoryClick(it)
         }
+        findViewById<Button>(R.id.otg_button).setOnClickListener {
+            sendOtg("test")
+        }
         findViewById<Button>(R.id.supported_cards_button).setOnClickListener {
             onSupportedCardsClick(it)
         }
+        //Creating a shared preference
+
+        screen= intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+        val sharedPref = this@MainActivity.getSharedPreferences(
+            "prefs", Context.MODE_PRIVATE)
+        with (sharedPref.edit()){
+            val gson = Gson();
+            val json = gson.toJson(screen)
+            putString("SerializableDevice", json)
+//            sharedPref.commit()
+            apply()
+        }
+
+
+    }
+
+    fun sendOtg(data:String) {
+
+
+        val manager = getSystemService(Context.USB_SERVICE) as UsbManager
+        val deviceList = manager.deviceList
+        if (deviceList.isEmpty()){
+            Log.d("sendOtg","no device")
+            return
+        }
+        var deviceD = deviceList[deviceList.keys.first()]
+
+
+        //val sharedPref = this@CardInfoActivity.getSharedPreferences(
+        //   "prefs", Context.MODE_PRIVATE)
+        //val deviceJson = sharedPref.getString("SerializableDevice","").orEmpty();
+        //val gson = Gson();
+        //val deviceD = gson.fromJson(deviceJson,UsbDevice::class.java);
+        //showDialog(this@CardInfoActivity, "sendOtg:deviceList", deviceD.toString());
+
+        Log.d("sendOtg", deviceD.toString())
+        var usbConnection = manager.openDevice(deviceD);
+
+        var usbSerialDevice = UsbSerialDevice.createUsbSerialDevice(deviceD,usbConnection);
+        usbSerialDevice.setBaudRate(9600)
+        Log.d("sendOtg", "created device")
+        usbSerialDevice.open();
+        Log.d("sendOtg", "opened device")
+        Handler(Looper.getMainLooper()).postDelayed({
+            //Do something after 100ms
+            usbSerialDevice.syncWrite("test".toByteArray(),1000)
+            Handler(Looper.getMainLooper()).postDelayed({
+                usbSerialDevice.write("test2".toByteArray())
+            },1000
+            )
+
+            Log.d("sendOtg", "write device")
+            //usbSerialDevice.close()
+        }, 5000)
+
+
+
+//        deviceD?.getInterface(0)?.also { intf ->
+//            intf.getEndpoint(0)?.also { endpoint ->
+//                manager.openDevice(deviceD)?.apply {
+//                    claimInterface(intf, forceClaim)
+//                    Log.d("sendOtg", "after claim interface")
+//                    bulkTransfer(
+//                        endpoint,
+//                        data.toByteArray(),
+//                        data.length,
+//                        TIMEOUT
+//                    ) //do in another thread
+//                    Log.d("sendOtg", "sent data")
+//                }
+//            }
+//        }
     }
 
     override fun onResume() {

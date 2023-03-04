@@ -22,7 +22,7 @@
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
      package="au.id.micolous.farebot">
-
+    <uses-feature android:name="android.hardware.usb.host" />
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="18"/>
     <uses-permission android:name="android.permission.INTERNET" />
@@ -70,6 +70,13 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="vnd.android.cursor.dir/${applicationId}.card" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+
+            <meta-data android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/device_filter" />
+
         </activity>
         <activity
             android:name="au.id.micolous.metrodroid.activity.ReadingTagActivity"
