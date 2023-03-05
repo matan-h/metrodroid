@@ -36,6 +36,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
 import au.id.micolous.farebot.R
@@ -66,6 +67,7 @@ class MainActivity : MetrodroidActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main)
 
         setHomeButtonEnabled(false)

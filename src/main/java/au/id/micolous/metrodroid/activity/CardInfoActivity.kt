@@ -36,6 +36,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.WindowManager
 import android.widget.TextView
 import androidx.loader.app.LoaderManager
 import androidx.loader.content.CursorLoader
@@ -93,7 +94,7 @@ class CardInfoActivity : MetrodroidActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_card_info)
 
         setDisplayHomeAsUpEnabled(true)
@@ -229,10 +230,26 @@ class CardInfoActivity : MetrodroidActivity() {
         val viewPager = findViewById<ViewPager2>(R.id.pager)
         // here, we can process transitData and make that as string
         val balances = transitData?.balances;
+        val a = transitData?.trips?.map { it.endStation?.lineNames.orEmpty()};
+        val b = transitData?.trips?.toTypedArray()
+//        transitData?.trips?.let { Log.i("info", it.joinToString(" ")) };
+        if (balances==null || balances.isEmpty()){
+            sendOtg(":::could not detect::["+ transitData?.cardName.orEmpty()+"]")
+            finish()
+            return
+        }
 
-        transitData?.trips?.let { Log.i("info", it.joinToString(" ")) };
-        val bD = balances?.first()!!.balance
-        sendOtg((bD.mCurrency.toDouble()/bD.mDivisor).toString());
+        val bD = balances.first().balance
+        //        sendOtg(bD.toString());
+        try {
+
+
+            sendOtg("You have " + (bD!!.mCurrency.toDouble() / bD.mDivisor).toString());
+        }
+        catch (e:Exception){
+            sendOtg("error:$e");
+            finish()
+        }
         findViewById<View>(R.id.loading).visibility = View.GONE
         viewPager.visibility = View.VISIBLE
 
